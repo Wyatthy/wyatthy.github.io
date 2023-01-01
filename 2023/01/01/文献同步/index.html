@@ -20,21 +20,26 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="首先要搞明白CUDA、CUDAToolkit….的关系 安装CUDA（cudatoolkit好像会顺带安上） 安装Pytorch ​    在Pytorch官网根据电脑环境生成合适的命令下载直接pip install torch会下错成CPU版(报错Torch not compiled with CUDA enabled 当时我看了官方站的问答才明白） 验证 123456&gt;&gt;&gt;">
+  <meta name="description" content="GoodNotes+Google Drive+Notion需求：在iPad上学习、批注文献，Windows端使用Notion对文献集中管理。文献要实时同步，Win端要能看到最新的批注情况。 探索了一段时间，尝试过Foxit、Notability、GoodNotes、PDFViewer、iCloud甚至百度云，但综合价格、批注习惯和生态等因素，用GoodNotes+Google Drive对文献进行">
 <meta property="og:type" content="article">
-<meta property="og:title" content="cuda入门">
-<meta property="og:url" content="http://example.com/2022/02/09/cuda/index.html">
+<meta property="og:title" content="文献同步与管理By GoodNotes&amp;Google Drive&amp;Notion （Win）">
+<meta property="og:url" content="http://example.com/2023/01/01/%E6%96%87%E7%8C%AE%E5%90%8C%E6%AD%A5/index.html">
 <meta property="og:site_name" content="WYATT&#39;S CAVE">
-<meta property="og:description" content="首先要搞明白CUDA、CUDAToolkit….的关系 安装CUDA（cudatoolkit好像会顺带安上） 安装Pytorch ​    在Pytorch官网根据电脑环境生成合适的命令下载直接pip install torch会下错成CPU版(报错Torch not compiled with CUDA enabled 当时我看了官方站的问答才明白） 验证 123456&gt;&gt;&gt;">
+<meta property="og:description" content="GoodNotes+Google Drive+Notion需求：在iPad上学习、批注文献，Windows端使用Notion对文献集中管理。文献要实时同步，Win端要能看到最新的批注情况。 探索了一段时间，尝试过Foxit、Notability、GoodNotes、PDFViewer、iCloud甚至百度云，但综合价格、批注习惯和生态等因素，用GoodNotes+Google Drive对文献进行">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2022-02-09T04:53:29.622Z">
-<meta property="article:modified_time" content="2022-04-23T12:55:08.172Z">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101132249422.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101125610629.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101145258586.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/demo.gif">
+<meta property="article:published_time" content="2023-01-01T12:43:20.956Z">
+<meta property="article:modified_time" content="2023-01-01T13:00:07.794Z">
 <meta property="article:author" content="wyatt">
 <meta property="article:tag" content="教程">
-<meta property="article:tag" content="CUDA">
+<meta property="article:tag" content="配置流程">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101132249422.png">
 
-<link rel="canonical" href="http://example.com/2022/02/09/cuda/">
+<link rel="canonical" href="http://example.com/2023/01/01/%E6%96%87%E7%8C%AE%E5%90%8C%E6%AD%A5/">
 
 
 <script id="page-configurations">
@@ -47,7 +52,7 @@
   };
 </script>
 
-  <title>cuda入门 | WYATT'S CAVE</title>
+  <title>文献同步与管理By GoodNotes&Google Drive&Notion （Win） | WYATT'S CAVE</title>
   
 
 
@@ -195,7 +200,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/02/09/cuda/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/01/01/%E6%96%87%E7%8C%AE%E5%90%8C%E6%AD%A5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/uploads/avatar.jpg">
@@ -208,7 +213,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          cuda入门
+          文献同步与管理By GoodNotes&Google Drive&Notion （Win）
         </h1>
 
         <div class="post-meta">
@@ -217,23 +222,17 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2022-02-09 12:53:29" itemprop="dateCreated datePublished" datetime="2022-02-09T12:53:29+08:00">2022-02-09</time>
+              <time title="Created: 2023-01-01 20:43:20 / Modified: 21:00:07" itemprop="dateCreated datePublished" datetime="2023-01-01T20:43:20+08:00">2023-01-01</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-04-23 20:55:08" itemprop="dateModified" datetime="2022-04-23T20:55:08+08:00">2022-04-23</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E8%AE%B0%E5%BD%95/" itemprop="url" rel="index"><span itemprop="name">学习记录</span></a>
+                  <a href="/categories/%E6%8A%80%E5%B7%A7/" itemprop="url" rel="index"><span itemprop="name">技巧</span></a>
                 </span>
             </span>
 
@@ -248,20 +247,43 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><p>首先要搞明白CUDA、CUDAToolkit….的关系</p>
-<p>安装CUDA（cudatoolkit好像会顺带安上）</p>
-<p>安装Pytorch</p>
-<p>​    在<a target="_blank" rel="noopener" href="https://pytorch.org/get-started/locally/#windows-installation">Pytorch官网</a>根据电脑环境生成<a target="_blank" rel="noopener" href="https://docs.nvidia.com/cuda/cuda-toolkit-release-notes">合适的</a>命令下载直接<code>pip install torch</code>会下错成CPU版(报错<code>Torch not compiled with CUDA enabled</code> 当时我看了官方站的<a target="_blank" rel="noopener" href="https://discuss.pytorch.org/t/torch-not-compiled-with-cuda-enabled/112467">问答</a>才明白）</p>
-<p>验证</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;</span><span class="language-bash">&gt;&gt; import torch</span></span><br><span class="line"><span class="meta">&gt;</span><span class="language-bash">&gt;&gt; torch.cuda.is_available()</span></span><br><span class="line">True</span><br><span class="line"><span class="meta">&gt;</span><span class="language-bash">&gt;&gt; torch.cuda.device_count()</span></span><br><span class="line">1</span><br><span class="line"><span class="meta">&gt;</span><span class="language-bash">&gt;&gt;</span></span><br></pre></td></tr></table></figure>
+        <h1 id="GoodNotes-Google-Drive-Notion"><a href="#GoodNotes-Google-Drive-Notion" class="headerlink" title="GoodNotes+Google Drive+Notion"></a>GoodNotes+Google Drive+Notion</h1><p><strong>需求：</strong><u>在iPad上学习、批注文献，Windows端使用Notion对文献集中管理。文献要实时同步，Win端要能看到最新的批注情况。</u></p>
+<p>探索了一段时间，尝试过Foxit、Notability、GoodNotes、PDFViewer、iCloud甚至百度云，但综合价格、批注习惯和生态等因素，用GoodNotes+Google Drive对文献进行同步是相对最适合我的。（0$哈哈哈）</p>
+<img src="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101132249422.png" style="zoom: 67%;" />
 
+<span id="more"></span>
 
+<h2 id="文献同步"><a href="#文献同步" class="headerlink" title="文献同步"></a>文献同步</h2><ol>
+<li><strong>GoodNotes开启GoogleDrive备份。</strong>Notes中所有内容会被同结构地备份到GoogleDrive下自动生成的GoodNotes文件夹中，至此实现了文件的云端备份。<br>顺其自然的，在电脑端直接浏览GoogleDrive里的文献就是最新批注的。<br>使用网页版GoogleDrive体验不如桌面版的，缓冲时间很不友好，有时网络问题甚至可能打不开了，因此：</li>
+<li><strong>下载GoogleDrive Desktop，并将同步模式设置为镜像模式。</strong>此时你就可以指定一个目录镜像地存放Drive中所有文件。<br>之所以不使用Stream这种节省空间的模式是因为他会把文件挂到<code>xx/My Drive/</code>下，路径中有个带空格的My Drive！路径带空格根本忍不了，甚至如果你没有把系统改成英文的（如果你是家庭版Windows还不能改成英文系统！），安装下来的GoogleDrive只会是中文版的，他会把文件挂到<code>xx/我的云盘/</code>下，路径带中文！关键这个路径名不能被更改。</li>
+</ol>
+<img src="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101125610629.png" style="zoom:50%;" />
 
+<p>我选择自定义的文件路径为：<code>E:/Google/Drive/</code>，那我GoodNotes里的论文就在本地的<code>E:/Google/Drive/GoodNotes/</code>文件夹下同步存在着。GoodNotes修改论文后自动同步到Drive里，电脑的Drive自动同步后，点击<code>E:/Google/Drive/GoodNotes/xxx.pdf</code>看到的就是最新的批注论文。</p>
+<p>但是在电脑端对GoodNotes文件夹下的pdf修改后，GoodNotes是看不到修改的，并且GoodNotes对其修改后会覆盖掉。这个问题我这个方案是无解的，没办法，这受限于GoodNotes操作的文件本质是<em>GoodNotes File</em>而非PDF，鱼和熊掌不可兼得。</p>
+<h2 id="文献管理"><a href="#文献管理" class="headerlink" title="文献管理"></a>文献管理</h2><p>使用Notion管理文献，需要在使用Notion时跳转到最新的批注文献（本地），比如上文中的<code>E:/Google/Drive/GoodNotes/xxx.pdf</code>，但是非会员限制单个文件&lt;5MB，会员好贵的！！！而且就真的是上传上去了，不能同步更新了。所以通过在Notion中嵌入本地文件链接，直接通过链接打开文件。使用Ngnix。</p>
+<h3 id="下载并配置Nginx"><a href="#下载并配置Nginx" class="headerlink" title="下载并配置Nginx"></a>下载并配置Nginx</h3><p><a target="_blank" rel="noopener" href="https://nginx.org/en/download.html">下载地址</a>，我选择的是Stable的<a target="_blank" rel="noopener" href="https://nginx.org/download/nginx-1.22.1.zip">nginx/Windows-1.22.1</a>。下载并解压。</p>
+<p>双击执行文件夹中nginx.exe，浏览器中输入并转到localhost，正常会显示Nginx的欢迎界面。  </p>
+<p>下面配置安装目录下的<code>conf/nginx.conf</code>，主要是配置location。打开后在原server的location字段下添加新的location字段：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">location</span> <span class="string">/goodnotes/</span> &#123;</span><br><span class="line">	<span class="string">alias</span>   <span class="string">E:/Google/Drive/GoodNotes/;</span>			<span class="comment"># 这里最后一个/要加上不然404</span></span><br><span class="line">	<span class="string">autoindex</span> <span class="string">on;</span>							  <span class="comment"># 开启自动适配全资源</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+<p><em>这里alias和root是有区别的，我用了alias，root与alias主要区别在于nginx如何解释location后面的uri，这使两者分别以不同的方式将请求映射到服务器文件上。参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/qingshan-tang/p/12763522.html">nginx配置静态资源访问</a></em></p>
+<p>然后终端中输入<code>nginx -s stop</code>停止服务后<code>start nginx</code>开启服务。</p>
+<blockquote>
+<p>按说<code>nginx -s reload</code>就可以起到更新conf文件后重新加载nginx服务的作用，但是我这边实践证明reload多少有问题，conf没有得到更新还是老内容，所以还是先stop再start了。参考了<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_40908748/article/details/110140072">解决nginx退出后却依然能访问页面的问题</a></p>
+<p><code>tasklist /fi &quot;IMAGENAME eq nginx.exe&quot;</code> 查看所有运行了的Nginx进程<br><code>taskkill /f /pid 16708</code>杀死PID16708的进程</p>
+</blockquote>
+<p>此时浏览器中输入<code>localhost/goodnotes/Interpretable/xxx.pdf</code>就可以打开本机的<code>E:/Google/Drive/GoodNotes/Interpretable/xxx.pdf</code>了。</p>
+<p>设置开机自启动nginx服务：右键nginx.exe生成快捷方式，将快捷方式剪切到系统的启动文件夹下。(Win+R输入<strong>shell:startup</strong>跳转过去)</p>
+<h3 id="Notion链接“本地”文献"><a href="#Notion链接“本地”文献" class="headerlink" title="Notion链接“本地”文献"></a>Notion链接“本地”文献</h3><img src="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101145258586.png" style="zoom:50%;" />
 
-<p>共享存储器的应用：矩阵乘法</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">__global__ <span class="type">void</span> <span class="title">MatrixMulKernel</span><span class="params">(<span class="type">float</span>* Md, <span class="type">float</span>* Nd, <span class="type">float</span>* Pd, <span class="type">int</span> Width)</span></span>&#123;</span><br><span class="line">    __shared__ <span class="type">float</span> Mds[TILE_WIDTH][TILE_WIDTH];</span><br><span class="line">    __shared__ <span class="type">float</span> Nds[TILE_WIDTH][TILE_WIDTH];</span><br><span class="line">    <span class="type">int</span> bx = blockIdx.x;  <span class="type">int</span> by = blockIdx.y;</span><br><span class="line">    <span class="type">int</span> tx = threadIdx.x; <span class="type">int</span> ty = threadIdx.y;</span><br><span class="line">    <span class="type">int</span> Row = by * TILE_WIDTH + ty;</span><br><span class="line">    <span class="type">int</span> Col = bx * TILE_WIDTH + tx;</span><br><span class="line">    <span class="type">float</span> Pvalue = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="type">int</span> m = <span class="number">0</span>; m &lt; Width/TILE_WIDTH; ++m) &#123;</span><br><span class="line">        <span class="comment">//ty tx都是局限于线程所在的线程块   把Width宽的输入矩阵分成m个阶段 避免共享内存不够用</span></span><br><span class="line">        Mds[ty][tx] = Md[Row*Width + (m*TILE_WIDTH + tx)];</span><br><span class="line">        Nds[ty][tx] = Nd[Col + (m*TILE_WIDTH + ty)*Width];</span><br><span class="line">        __syncthreads();<span class="comment">//此处同步 将m阶段的Mds和Nds都填满了（TILE_WIDTH*TILE_WIDTH个线程共同的努力）</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> k = <span class="number">0</span>; k &lt; TILE_WIDTH; ++k)</span><br><span class="line">            Pvalue += Mds[ty][k] * Nds[k][tx];</span><br><span class="line">        __synchthreads();</span><br><span class="line">    &#125;</span><br><span class="line">    Pd[Row*Width+Col] = Pvalue;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<img src="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/demo.gif" alt="demo" style="zoom: 33%;" />
 
+<p>至此，只实现了对pdf类型的跳转打开，期间尝试了Nginx - Shell Script CGI，但是没成功，网上大部分都是Linux或者苹果的博客。后续我会再试的。</p>
+<blockquote>
+<p>参考文章</p>
+<p><a target="_blank" rel="noopener" href="https://four2.site/articles/id19422.html">在 Notion 中插入本地文件和目录链接</a><br><a target="_blank" rel="noopener" href="https://me.jinchuang.org/archives/114.html">Nginx支持web界面执行bash|python等系统命令和脚本</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/qingshan-tang/p/12763522.html">nginx配置静态资源访问</a></p>
+</blockquote>
 
     </div>
 
@@ -272,7 +294,7 @@
       <footer class="post-footer">
           <div class="post-tags">
               <a href="/tags/%E6%95%99%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 教程</a>
-              <a href="/tags/CUDA/" rel="tag"><i class="fa fa-tag"></i> CUDA</a>
+              <a href="/tags/%E9%85%8D%E7%BD%AE%E6%B5%81%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 配置流程</a>
           </div>
 
         
@@ -281,13 +303,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2022/02/09/hexo%E9%85%8D%E7%BD%AE/" rel="prev" title="Hexo配置">
-      <i class="fa fa-chevron-left"></i> Hexo配置
+    <a href="/2022/03/31/OpenCV+Libtorch+VC/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2022/02/09/%E5%90%84%E7%A7%8Derror/" rel="next" title="Error汇总">
-      Error汇总 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -346,7 +365,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-number">1.</span> <span class="nav-text"></span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#GoodNotes-Google-Drive-Notion"><span class="nav-number">1.</span> <span class="nav-text">GoodNotes+Google Drive+Notion</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E7%8C%AE%E5%90%8C%E6%AD%A5"><span class="nav-number">1.1.</span> <span class="nav-text">文献同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E7%8C%AE%E7%AE%A1%E7%90%86"><span class="nav-number">1.2.</span> <span class="nav-text">文献管理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E5%B9%B6%E9%85%8D%E7%BD%AENginx"><span class="nav-number">1.2.1.</span> <span class="nav-text">下载并配置Nginx</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Notion%E9%93%BE%E6%8E%A5%E2%80%9C%E6%9C%AC%E5%9C%B0%E2%80%9D%E6%96%87%E7%8C%AE"><span class="nav-number">1.2.2.</span> <span class="nav-text">Notion链接“本地”文献</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
