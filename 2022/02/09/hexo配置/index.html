@@ -28,7 +28,7 @@
 <meta property="og:description" content="入手一、安装好Node.js和HexoHexo基于Node.js，下载地址：Download | Node.js 下载安装包，注意安装Node.js会包含环境变量及npm的安装，安装后，检测是否安装成功，在命令行中输入 node -v 和npm -v以检测。 到这了，安装Hexo的环境已经全部搭建完成。 使用npm命令安装Hexo，输入： 1npm install -g hexo-cli">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2022-02-09T04:53:29.619Z">
-<meta property="article:modified_time" content="2023-01-02T02:27:58.859Z">
+<meta property="article:modified_time" content="2023-01-02T03:01:38.970Z">
 <meta property="article:author" content="wyatt">
 <meta property="article:tag" content="教程">
 <meta property="article:tag" content="配置流程">
@@ -225,7 +225,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-01-02 10:27:58" itemprop="dateModified" datetime="2023-01-02T10:27:58+08:00">2023-01-02</time>
+                <time title="Modified: 2023-01-02 11:01:38" itemprop="dateModified" datetime="2023-01-02T11:01:38+08:00">2023-01-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -315,13 +315,44 @@
 <p>编辑<code>themes/next/_config.yml</code> 主题配置文件，启用本地搜索功能,将<code>local_search:</code>下面的<code>enable:</code>的值，改成<code>true</code></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># Local search</span><br><span class="line">local_search:</span><br><span class="line">  enable: true</span><br></pre></td></tr></table></figure>
 
-<h1 id="移植到新电脑"><a href="#移植到新电脑" class="headerlink" title="移植到新电脑"></a>移植到新电脑</h1><p><del>git clone 博客仓库</del></p>
-<p><del>完成入手篇的第一节即下载完hexo之后在新的博客路径下执行以下命令：</del></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure>
+<h1 id="移植到新电脑"><a href="#移植到新电脑" class="headerlink" title="移植到新电脑"></a>移植到新电脑</h1><p>完成入手篇的第一节即下载完hexo之后在新的博客路径下执行以下命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo init</span><br><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure>
 
-<p><del>将原来博客文件夹中的</del><br>_config.yml<br>theme/</p>
-<p>source/<br><em>scaffolds/</em><br><em>package.json</em><br>.gitignore<br><del>复制到新的博客路径下</del></p>
-<p><del>这就好了，先hexo g生成一下再hexo s预览一下看看效果  –End</del></p>
+<p>Hexo博客系统中影响迁移的只有一部分文件和文件夹，所以只需要备份它们即可</p>
+<table>
+<thead>
+<tr>
+<th>文件（夹）</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>scaffolds/</td>
+<td>博客文章的模版</td>
+</tr>
+<tr>
+<td>source/</td>
+<td>所有博客文章，以及about、tags、categories等page</td>
+</tr>
+<tr>
+<td>themes/</td>
+<td>网站的主题所在文件夹</td>
+</tr>
+<tr>
+<td>.gitignore</td>
+<td>在push时需要忽略的文件和文件夹</td>
+</tr>
+<tr>
+<td>_config.yml</td>
+<td>站点配置文件</td>
+</tr>
+<tr>
+<td>package.json</td>
+<td>依赖包的名称和版本号</td>
+</tr>
+</tbody></table>
+<p>将原来博客文件夹中的<br>_config.yml<br>theme/<br>source/<br><em>scaffolds/</em><br><em>package.json</em><br><em>.gitignore</em><br>复制到新的博客路径下</p>
+<p>这就好了，先hexo g生成一下再hexo s预览一下看看效果  –End</p>
 
     </div>
 
@@ -418,14 +449,14 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
