@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="A Unified Approach to Interpreting Model PredictionsAbstract 定义了加性特征归属度一类方法，是现有六种方法的集合。 加性特征归属度一类方法存在唯一的解决方案；提出SHAP值作为统一的特征重要性度量。 提出了SHAP值的估计方法，证明它是符合人认知的，通过对比可知它能更有效地区分模型输出类。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="精读SHAP">
+<meta property="og:url" content="http://example.com/2023/01/29/SHAP/index.html">
+<meta property="og:site_name" content="WYATT&#39;S CAVE">
+<meta property="og:description" content="A Unified Approach to Interpreting Model PredictionsAbstract 定义了加性特征归属度一类方法，是现有六种方法的集合。 加性特征归属度一类方法存在唯一的解决方案；提出SHAP值作为统一的特征重要性度量。 提出了SHAP值的估计方法，证明它是符合人认知的，通过对比可知它能更有效地区分模型输出类。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/ForPicGo/main/images/202301290952122.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/ForPicGo/main/images/202301291035953.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/ForPicGo/main/images/202301291834538.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/ForPicGo/main/images/202301292050642.png">
+<meta property="article:published_time" content="2023-01-29T00:59:30.589Z">
+<meta property="article:modified_time" content="2023-03-21T06:52:41.333Z">
+<meta property="article:author" content="wyatt">
+<meta property="article:tag" content="精读论文">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Wyatthy/ForPicGo/main/images/202301290952122.png">
+
+<link rel="canonical" href="http://example.com/2023/01/29/SHAP/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>精读SHAP | WYATT'S CAVE</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?0561f7d8f733c45b7fb37fa9fbc220d3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">WYATT'S CAVE</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/01/29/SHAP/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="wyatt">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="WYATT'S CAVE">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          精读SHAP
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-01-29 08:59:30" itemprop="dateCreated datePublished" datetime="2023-01-29T08:59:30+08:00">2023-01-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-03-21 14:52:41" itemprop="dateModified" datetime="2023-03-21T14:52:41+08:00">2023-03-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E8%AE%B0%E5%BD%95/" itemprop="url" rel="index"><span itemprop="name">学习记录</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="A-Unified-Approach-to-Interpreting-Model-Predictions"><a href="#A-Unified-Approach-to-Interpreting-Model-Predictions" class="headerlink" title="A Unified Approach to Interpreting Model Predictions"></a>A Unified Approach to Interpreting Model Predictions</h1><h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><ul>
+<li>定义了<strong>加性特征归属度</strong>一类方法，是现有六种方法的集合。</li>
+<li>加性特征归属度一类方法存在唯一的解决方案；提出SHAP值作为统一的特征重要性度量。</li>
+<li>提出了SHAP值的估计方法，证明它是符合人认知的，通过对比可知它能更有效地区分模型输出类。</li>
+</ul>
+<hr>
+<span id="more"></span>
+
+<h2 id="Additive-Feature-Attribution-Methods"><a href="#Additive-Feature-Attribution-Methods" class="headerlink" title="Additive Feature Attribution Methods"></a>Additive Feature Attribution Methods</h2><p>这是一类将分类模型$f$预测的任何解释视为解释模型$g$本身的方法。（Local Method）</p>
+<p>包含一个原始输入到简化输入的映射关系$x=h_x\left(x^{\prime}\right)$，</p>
+<p>Local Method极力做到$g\left(z^{\prime}\right) \approx f\left(h_x\left(z^{\prime}\right)\right)$，$z^{\prime} \approx x^{\prime}$。</p>
+<p><img src="https://raw.githubusercontent.com/Wyatthy/ForPicGo/main/images/202301290952122.png" alt="image-20230129095255058"></p>
+<p>LIME、DeepLIFT、Layer-Wise Relevance Propagation、Classic Shapley Value Estimation(包含以下三种)都满足上定义。</p>
+<h3 id="Shapley-regression-values"><a href="#Shapley-regression-values" class="headerlink" title="Shapley regression values"></a><strong>Shapley regression values</strong></h3><p>每个特征值的Shapley值是该特征值对预测的贡献，通过对所有可能的特征值组合进行加权和求和得到：<br>$$<br>\phi_i=\sum_{S \subseteq F \backslash{i}} \frac{|S| !(|F|-|S|-1) !}{|F| !}\left[f_{S \cup{i}}\left(x_{S \cup{i}}\right)-f_S\left(x_S\right)\right]<br>$$<br>$\phi_0=f_{\varnothing}(\varnothing)$时，<em>Shapley regression values</em>满足Definition的等式(1)。</p>
+<p>这样计算得到的Shapley值是唯一满足<strong>效率性（Efficiency）</strong>，<strong>对称性（Symmetry）</strong>，<strong>虚拟性（Dummy）</strong>和<strong>可加性（Additivity）</strong>四个属性的归因方法，它们可以一起被视为公平支出的定义。</p>
+<p><strong>效率性</strong>：特征贡献的累加等于 x 的预测和预测平均值的差值。<br>$$<br>\sum_{j=1}^p \phi_j=\hat{f}(x)-E_X(\hat{f}(X))<br>$$<br><strong>对称性</strong>：如果两个特征值 j 和 k 的贡献对所有可能的联盟贡献相同，则它们的贡献应该相同。<br>$$<br>\begin{array}{lc}<br>\text { if } &amp; \operatorname{val}\left(S \cup\left{x_j\right}\right)=\operatorname{val}\left(S \cup\left{x_k\right}\right) \<br>\text { for all } &amp; S \subseteq\left{x_1, \cdots, x_p\right} \backslash\left{x_j, x_k\right} \<br>\text { then } &amp; \phi_j=\phi_k<br>\end{array}<br>$$<br><strong>虚拟性</strong>：一个不改变预测值的特征 j ，无论它添加到哪个特征值联盟中，Shapley值都应该为0。<br>$$<br>if \quad \operatorname{val}\left(S \cup\left{x_j\right}\right)=\operatorname{val}(S)\<br>forall \quad S \subseteq\left{x_1, \cdots, x_p\right}\<br>then \quad \phi_j=0$<br>$$<br><strong>可加性</strong>：对于具有组合支出的情景，相应的Shapley值应为：$\phi_j=\phi_j^{+}$</p>
+<h3 id="Shapley-sampling-values"><a href="#Shapley-sampling-values" class="headerlink" title="Shapley sampling values"></a><strong>Shapley sampling values</strong></h3><p>通过抽样去近似估计<em>Shapley regression values</em>，因为精确的Shapley值必须通过使用和不使用第$i$个特征的所有可能特征联盟$S$来估计，当特征数较多时，可能的联盟数量会随着特征的增加而呈指数增长，<a target="_blank" rel="noopener" href="https://link.springer.com/article/10.1007/s10115-013-0679-x">2014年</a>提出蒙特卡罗采样的近似值（<em>Shapley sampling values</em>）。</p>
+<h3 id="Quantitative-Input-Influence"><a href="#Quantitative-Input-Influence" class="headerlink" title="Quantitative Input Influence"></a>Quantitative Input Influence</h3><p>A broader framework that addresses more than feature attributions.</p>
+<hr>
+<h2 id="Simple-Properties-Uniquely-Determine-Additive-Feature-Attributions"><a href="#Simple-Properties-Uniquely-Determine-Additive-Feature-Attributions" class="headerlink" title="Simple Properties Uniquely Determine Additive Feature Attributions"></a>Simple Properties Uniquely Determine Additive Feature Attributions</h2><p><em>Additive Feature Attribution Methods</em>存在一个唯一的能同时具有三种理想属性的解决方案：</p>
+<p><img src="https://raw.githubusercontent.com/Wyatthy/ForPicGo/main/images/202301291035953.png" alt="image-20230129103559903"></p>
+<p>其满足：</p>
+<p><strong>Properties1 Local accuracy局部准确</strong></p>
+<p>对于每一个样本，各个特征的归因值与常数归因值之和等于模型的输出值f(x)<br>$$<br>f(x)=g\left(x^{\prime}\right)=\phi_0+\sum_{i=1}^M \phi_i x_i^{\prime}<br>$$<br><strong>Properties2 Missingness缺失性</strong></p>
+<p>缺失性表示缺失特征的归因值为零，这里的缺失不是结构化数据的某个特征值是空，而是某个特征在实例中观察不到。对于一个结构化数据的实例，所有的$x_i^{\prime}$都为1。<br>$$<br>x_i^{\prime}=0 \Longrightarrow \phi_i=0<br>$$<br><strong>Properties3 Consistency一致性</strong><br>$$<br>\begin{array}{lc}<br>\text { if } &amp; \quad f_x^{\prime}\left(z^{\prime}\right)-f_x^{\prime}\left(z^{\prime} \backslash j\right) \geq f_x\left(z^{\prime}\right)-f_x\left(z^{\prime} \backslash j\right) \<br>\text { for all inputs } &amp; \quad z^{\prime} \in{0,1}^M\<br>\text { then } &amp; \quad \phi_j\left(f^{\prime}, x\right) \geq \phi_j(f, x)<br>\end{array}<br>$$<br>一致性属性表示，如果模型发生更改，使得特征值的边际贡献增加或保持不变（与其他特征无关），则归因值也会增加或保持不变。</p>
+<blockquote>
+<p><a href="https://link.zhihu.com/?target=https://link.springer.com/article/10.1007/BF01769885">Young</a>认为Shapley值的可加性和虚拟性可以用单调性代替，而一致性其实就是单调性，并且在论文中认为对于机器学习模型，单调性意味着对称性，所以一致性对应Shapley值的可加性、虚拟性和对称性。具体解释见<a href="https://link.zhihu.com/?target=https://stats.stackexchange.com/questions/389162/characteristics-of-shapley-values/389261%23389261">stackexchange</a>。</p>
+</blockquote>
+<hr>
+<h2 id="SHAP-SHapley-Additive-exPlanation-Values"><a href="#SHAP-SHapley-Additive-exPlanation-Values" class="headerlink" title="SHAP (SHapley Additive exPlanation) Values"></a>SHAP (SHapley Additive exPlanation) Values</h2><p>是隶属于加性特征归属度方法的，不同于shapley回归的是预测解释为引入条件期望的每个特征的影响$\phi_j$的总和。</p>
+<p><img src="https://raw.githubusercontent.com/Wyatthy/ForPicGo/main/images/202301291834538.png" alt="image-20230129183424452"></p>
+<p>定义$f_x(S)=E\left[f(x) \mid x_S\right]$，S是输入特征可能的子集合（Shapley值中提到的联盟），$E\left[f(x) \mid x_S\right]$是输入特征的子集S的条件期望值（Shapley值提到的val函数）。</p>
+<ul>
+<li>S为空集时，$\phi_0=f_x(\varnothing)=E[f(x)]$，即为模型预测值的期望，可以用训练样本的模型预测值的平均值近似.</li>
+<li>接下来S顺序加入特征$x_{1}$，此时$\phi_1=f_x\left(\left{x_1\right}\right)-f_x(\varnothing)=E\left[f(x) \mid x_1\right]-E[f(x)]$，即$\left{x_1=a_1\right}$时的模型预测值期望 - 模型预测值期望.</li>
+<li>然后S顺序加入特征$x_{2}$，此时$\phi_2=f_x\left(\left{x_1, x_2\right}\right)-f_x\left(\left{x_1\right}\right)=E\left[f(x) \mid x_1, x_2\right]-E\left[f(x) \mid x_1\right]$，即$\left{ x_1=a_1,x_2=a_2 \right} $时的模型预测值期望 -  $\left{ x_1=a_1 \right}$ 时的模型预测值期望.</li>
+<li>直至加入最后一个特征$ x4 $，此时 $\phi_4=f_x(\left{ x_1,x_2,x_3,x_4 \right})-f_x(\left{ x_1,x_2,x_3 \right} )=E[f(x)|x_1,x_2,x_3,x_4]-E[f(x)|x_1,x_2,x_3] $，即$\left{ x_1=a_1,x_2=a_2,x_3=a_3,x_4=a_4 \right} $时的模型预测值期望 - $\left{ x_1=a_1,x_2=a_2,x_3=a_3 \right} $时的模型预测值期望，此时为四个特征单一排序下的预测值，其实就是样本的预测值.</li>
+</ul>
+<p>当模型是非线性的或输入特征不是独立时，SHAP值应该对所有可能的特征排序计算加权平均值。SHAP将这些条件期望与从博弈论的经典Shapley值组合到每个特征的归因值$\phi_j$ 中，也就是根据下式进行计算:<br>$$<br>\phi_j=\sum_{S \subseteq\left{x_1, \cdots, x_p\right} \backslash\left{x_j\right}} \frac{|S| !(p-|S|-1) !}{p !}\left(f_x\left(S \cup\left{x_j\right}\right)-f_x(S)\right)<br>$$</p>
+<h3 id="Kernel-SHAP-Linear-LIME-Shapley-values"><a href="#Kernel-SHAP-Linear-LIME-Shapley-values" class="headerlink" title="Kernel SHAP (Linear LIME + Shapley values)"></a>Kernel SHAP (Linear LIME + Shapley values)</h3><p>以上提到的六种加性特征归属度方法除了Classic Shapley Value Estimation本就满足，其他都只满足Properties2。</p>
+<blockquote>
+<p>The following section proposes a unified approach that improves previous methods, preventing them from unintentionally violating Properties 1 and 3.</p>
+</blockquote>
+<p>对LIME修正使其满足Local accuracy和Consistency：</p>
+<p><img src="https://raw.githubusercontent.com/Wyatthy/ForPicGo/main/images/202301292050642.png" alt="image-20230129205004552"></p>
+<p>KernelSHAP是完全模型无关的，可以搭配任何算法去近似shaply值。</p>
+<p>SHAP interaction valus</p>
+<p>是shap值的拓展，可以展示各个特征之间的组合影响关系，比如通过一个矩阵显示出来。本来KernelSHAP的速度就慢，若要计算交互值最好使用treeSHAP否则会极慢。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%B2%BE%E8%AF%BB%E8%AE%BA%E6%96%87/" rel="tag"><i class="fa fa-tag"></i> 精读论文</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/01/26/%E8%85%8A%E8%82%A0%E5%88%B6%E4%BD%9C/" rel="prev" title="2023年做的腊肠!">
+      <i class="fa fa-chevron-left"></i> 2023年做的腊肠!
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/03/21/QT+TensorRT%E6%B5%81%E6%B0%B4%E8%AE%B0%E5%BD%95/" rel="next" title="QT+TensorRT流水记录">
+      QT+TensorRT流水记录 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#A-Unified-Approach-to-Interpreting-Model-Predictions"><span class="nav-number">1.</span> <span class="nav-text">A Unified Approach to Interpreting Model Predictions</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Abstract"><span class="nav-number">1.1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Additive-Feature-Attribution-Methods"><span class="nav-number">1.2.</span> <span class="nav-text">Additive Feature Attribution Methods</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Shapley-regression-values"><span class="nav-number">1.2.1.</span> <span class="nav-text">Shapley regression values</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Shapley-sampling-values"><span class="nav-number">1.2.2.</span> <span class="nav-text">Shapley sampling values</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Quantitative-Input-Influence"><span class="nav-number">1.2.3.</span> <span class="nav-text">Quantitative Input Influence</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Simple-Properties-Uniquely-Determine-Additive-Feature-Attributions"><span class="nav-number">1.3.</span> <span class="nav-text">Simple Properties Uniquely Determine Additive Feature Attributions</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SHAP-SHapley-Additive-exPlanation-Values"><span class="nav-number">1.4.</span> <span class="nav-text">SHAP (SHapley Additive exPlanation) Values</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Kernel-SHAP-Linear-LIME-Shapley-values"><span class="nav-number">1.4.1.</span> <span class="nav-text">Kernel SHAP (Linear LIME + Shapley values)</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="wyatt"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">wyatt</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">wyatt</span>
+</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+  <script>
+    (function(){
+      var canonicalURL, curProtocol;
+      //Get the <link> tag
+      var x=document.getElementsByTagName("link");
+		//Find the last canonical URL
+		if(x.length > 0){
+			for (i=0;i<x.length;i++){
+				if(x[i].rel.toLowerCase() == 'canonical' && x[i].href){
+					canonicalURL=x[i].href;
+				}
+			}
+		}
+    //Get protocol
+	    if (!canonicalURL){
+	    	curProtocol = window.location.protocol.split(':')[0];
+	    }
+	    else{
+	    	curProtocol = canonicalURL.split(':')[0];
+	    }
+      //Get current URL if the canonical URL does not exist
+	    if (!canonicalURL) canonicalURL = window.location.href;
+	    //Assign script content. Replace current URL with the canonical URL
+      !function(){var e=/([http|https]:\/\/[a-zA-Z0-9\_\.]+\.baidu\.com)/gi,r=canonicalURL,t=document.referrer;if(!e.test(r)){var n=(String(curProtocol).toLowerCase() === 'https')?"https://sp0.baidu.com/9_Q4simg2RQJ8t7jm9iCKT-xh_/s.gif":"//api.share.baidu.com/s.gif";t?(n+="?r="+encodeURIComponent(document.referrer),r&&(n+="&l="+r)):r&&(n+="?l="+r);var i=new Image;i.src=n}}(window);})();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
