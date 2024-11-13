@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="一些题外话：这篇博客源自于实际的项目经历，项目中我负责对各类模型在Qt系统上的部署，从Libtorch到Pytorch再到TensorFlow的模型部署，都浅浅走了一遍，不透彻但能跑通了。  整体介绍：以TensorFlow训练DenseNet121分类CIFAR10的应用场景为例，讲模型在C++环境下的TensorRT加速部署。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TensorRT &amp; C++ &amp; TensorFlow &amp; DenseNet &amp; CIFAR10模型部署">
+<meta property="og:url" content="http://example.com/2022/08/22/TensorRT%20&%20C++%20&%20TensorFlow%20&%20DenseNet%20&%20CIFAR10%E6%A8%A1%E5%9E%8B%E9%83%A8%E7%BD%B2/index.html">
+<meta property="og:site_name" content="WYATT&#39;S CAVE">
+<meta property="og:description" content="一些题外话：这篇博客源自于实际的项目经历，项目中我负责对各类模型在Qt系统上的部署，从Libtorch到Pytorch再到TensorFlow的模型部署，都浅浅走了一遍，不透彻但能跑通了。  整体介绍：以TensorFlow训练DenseNet121分类CIFAR10的应用场景为例，讲模型在C++环境下的TensorRT加速部署。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/onnx-workflow.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101125610629.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101132249422.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101145258586.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/demo.gif">
+<meta property="article:published_time" content="2022-08-22T02:27:28.197Z">
+<meta property="article:modified_time" content="2024-11-13T06:56:56.296Z">
+<meta property="article:author" content="wyatt">
+<meta property="article:tag" content="项目">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/onnx-workflow.png">
+
+<link rel="canonical" href="http://example.com/2022/08/22/TensorRT%20&%20C++%20&%20TensorFlow%20&%20DenseNet%20&%20CIFAR10%E6%A8%A1%E5%9E%8B%E9%83%A8%E7%BD%B2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>TensorRT & C++ & TensorFlow & DenseNet & CIFAR10模型部署 | WYATT'S CAVE</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?0561f7d8f733c45b7fb37fa9fbc220d3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">WYATT'S CAVE</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/22/TensorRT%20&%20C++%20&%20TensorFlow%20&%20DenseNet%20&%20CIFAR10%E6%A8%A1%E5%9E%8B%E9%83%A8%E7%BD%B2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+      <meta itemprop="name" content="wyatt">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="WYATT'S CAVE">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          TensorRT & C++ & TensorFlow & DenseNet & CIFAR10模型部署
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-08-22 10:27:28" itemprop="dateCreated datePublished" datetime="2022-08-22T10:27:28+08:00">2022-08-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2024-11-13 14:56:56" itemprop="dateModified" datetime="2024-11-13T14:56:56+08:00">2024-11-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%8D%9A%E5%AE%A2/" itemprop="url" rel="index"><span itemprop="name">博客</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>一些题外话：这篇博客源自于实际的项目经历，项目中我负责对各类模型在Qt系统上的部署，从Libtorch到Pytorch再到TensorFlow的模型部署，都浅浅走了一遍，不透彻但能跑通了。</p>
+</blockquote>
+<p>整体介绍：以TensorFlow训练DenseNet121分类CIFAR10的应用场景为例，讲模型在C++环境下的TensorRT加速部署。</p>
+<span id="more"></span>
+
+<h2 id="零-环境配置"><a href="#零-环境配置" class="headerlink" title="零. 环境配置"></a>零. 环境配置</h2><table>
+<thead>
+<tr>
+<th align="center">名称</th>
+<th align="center">版本号</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">TensorRT</td>
+<td align="center">TensorRT-7.2.3.4.Windows10.x86_64.cuda-11.1.cudnn8.1</td>
+</tr>
+<tr>
+<td align="center">tensorflow-gpu</td>
+<td align="center">2.9.1</td>
+</tr>
+<tr>
+<td align="center">C++ Compiler</td>
+<td align="center">MSVC/14.29.30133</td>
+</tr>
+<tr>
+<td align="center">CUDA</td>
+<td align="center">11.1</td>
+</tr>
+<tr>
+<td align="center">cuDNN</td>
+<td align="center">8.4.1</td>
+</tr>
+<tr>
+<td align="center">libtorch</td>
+<td align="center">libtorch-1.8.2+cu111</td>
+</tr>
+<tr>
+<td align="center">pytorch</td>
+<td align="center">torch1.12.0+cu113</td>
+</tr>
+<tr>
+<td align="center">tf2onnx</td>
+<td align="center">1.11.1</td>
+</tr>
+<tr>
+<td align="center">opencv</td>
+<td align="center">opencv-3.4.13</td>
+</tr>
+<tr>
+<td align="center">keras</td>
+<td align="center">2.9.0</td>
+</tr>
+<tr>
+<td align="center">h5py</td>
+<td align="center">3.9.0</td>
+</tr>
+<tr>
+<td align="center">Windows</td>
+<td align="center">Windows 10 家庭中文版 19044.1889</td>
+</tr>
+<tr>
+<td align="center">OpenCV</td>
+<td align="center">3.4.13</td>
+</tr>
+</tbody></table>
+<p>模型部署整体的流程如下图所示：</p>
+<p><img src="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/onnx-workflow.png"></p>
+<p>可以参考链接：<a target="_blank" rel="noopener" href="https://developer.nvidia.com/zh-cn/blog/speeding-up-deep-learning-inference-using-tensorflow-onnx-and-tensorrt/">使用 TensorFlow、ONNX 和 TensorRT 加速深度学习推理</a></p>
+<h2 id="一、模型训练及保存"><a href="#一、模型训练及保存" class="headerlink" title="一、模型训练及保存"></a>一、模型训练及保存</h2><p>参考<a target="_blank" rel="noopener" href="https://bouzouitina-hamdi.medium.com/transfer-learning-with-keras-using-densenet121-fffc6bb0c233">这篇博客</a>，训练一个基于keras.application中的DenseNet网络的、处理Cifar10的模型，保存为<code>.hdf5</code>格式。</p>
+<p>我们在经典的DenNet121网络前加了resize层，使得网络能接收CIFAR10数据集中<code>32x32x3</code>的数据。代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> keras <span class="keyword">as</span> K</span><br><span class="line"><span class="keyword">from</span> keras <span class="keyword">import</span> datasets, layers, models</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">preprocess_data</span>(<span class="params">X, Y</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;pre-processes the data&quot;&quot;&quot;</span></span><br><span class="line">    X_p = X_p = K.applications.densenet.preprocess_input(X)</span><br><span class="line">    <span class="string">&quot;&quot;&quot;one hot encode target values&quot;&quot;&quot;</span></span><br><span class="line">    Y_p = K.utils.to_categorical(Y, <span class="number">10</span>)</span><br><span class="line">    <span class="keyword">return</span> X_p, Y_p</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;&quot;&quot;load dataset&quot;&quot;&quot;</span></span><br><span class="line">(trainX, trainy), (testX, testy) = K.datasets.cifar10.load_data()</span><br><span class="line">x_train, y_train = preprocess_data(trainX, trainy)</span><br><span class="line">x_test, y_test = preprocess_data(testX, testy)</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;&quot;&quot; USE DenseNet121&quot;&quot;&quot;</span></span><br><span class="line">OldModel = K.applications.DenseNet121(include_top=<span class="literal">False</span>,input_tensor=<span class="literal">None</span>,weights=<span class="string">&#x27;imagenet&#x27;</span>)</span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> OldModel.layers[:<span class="number">149</span>]:</span><br><span class="line">    layer.trainable = <span class="literal">False</span></span><br><span class="line"><span class="keyword">for</span> layer <span class="keyword">in</span> OldModel.layers[<span class="number">149</span>:]:</span><br><span class="line">    layer.trainable = <span class="literal">True</span></span><br><span class="line"></span><br><span class="line">model = K.models.Sequential()</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;&quot;&quot;a lambda layer that scales up the data to the correct size&quot;&quot;&quot;</span></span><br><span class="line">model.add(K.layers.Lambda(<span class="keyword">lambda</span> x:K.backend.resize_images(x,height_factor=<span class="number">7</span>,width_factor=<span class="number">7</span>,data_format=<span class="string">&#x27;channels_last&#x27;</span>)))</span><br><span class="line"></span><br><span class="line">model.add(OldModel)</span><br><span class="line">model.add(K.layers.Flatten())</span><br><span class="line">model.add(K.layers.BatchNormalization())</span><br><span class="line">model.add(K.layers.Dense(<span class="number">256</span>, activation=<span class="string">&#x27;relu&#x27;</span>))</span><br><span class="line">model.add(K.layers.Dropout(<span class="number">0.7</span>))</span><br><span class="line">model.add(K.layers.BatchNormalization())</span><br><span class="line">model.add(K.layers.Dense(<span class="number">128</span>, activation=<span class="string">&#x27;relu&#x27;</span>))</span><br><span class="line">model.add(K.layers.Dropout(<span class="number">0.5</span>))</span><br><span class="line">model.add(K.layers.BatchNormalization())</span><br><span class="line">model.add(K.layers.Dense(<span class="number">64</span>, activation=<span class="string">&#x27;relu&#x27;</span>))</span><br><span class="line">model.add(K.layers.Dropout(<span class="number">0.3</span>))</span><br><span class="line">model.add(K.layers.Dense(<span class="number">10</span>, activation=<span class="string">&#x27;softmax&#x27;</span>))</span><br><span class="line"><span class="string">&quot;&quot;&quot;callbacks&quot;&quot;&quot;</span></span><br><span class="line"><span class="comment"># cbacks =  K.callbacks.CallbackList()</span></span><br><span class="line"><span class="comment"># cbacks.append(K.callbacks.ModelCheckpoint(filepath=&#x27;cifar10.h5&#x27;,monitor=&#x27;val_accuracy&#x27;,save_best_only=True))</span></span><br><span class="line"><span class="comment"># cbacks.append(K.callbacks.EarlyStopping(monitor=&#x27;val_accuracy&#x27;,patience=2))</span></span><br><span class="line"></span><br><span class="line">model.<span class="built_in">compile</span>(optimizer=<span class="string">&#x27;adam&#x27;</span>,loss=<span class="string">&#x27;categorical_crossentropy&#x27;</span>,metrics=[<span class="string">&#x27;accuracy&#x27;</span>])</span><br><span class="line"><span class="string">&quot;&quot;&quot;train&quot;&quot;&quot;</span></span><br><span class="line">model.fit(x=x_train,y=y_train,batch_size=<span class="number">128</span>,epochs=<span class="number">5</span>,validation_data=(x_test, y_test))</span><br><span class="line">model.summary()</span><br><span class="line"></span><br><span class="line">model.save(<span class="string">&#x27;cifar10.h5&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>事实上，如果使用这个训练得到的<code>cifar10.h5</code>模型来做下面的转换，在转到<code>trt</code>引擎文件的时候会报错:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[07/28/2022-12:54:39] [W] [TRT] onnx2trt_utils.cpp:220: Your ONNX model has been generated with INT64 weights, while TensorRT does not natively support INT64. Attempting to cast down to INT32.</span><br><span class="line">ERROR: builtin_op_importers.cpp:2593 In function importResize:</span><br><span class="line">[8] Assertion failed: (mode != &quot;nearest&quot; || nearest_mode == &quot;floor&quot;) &amp;&amp; &quot;This version of TensorRT only supports floor nearest_mode!&quot;</span><br><span class="line">[07/28/2022-12:54:39] [E] Failed to parse onnx file</span><br><span class="line">[07/28/2022-12:54:39] [E] Parsing model failed</span><br><span class="line">[07/28/2022-12:54:39] [E] Engine creation failed</span><br><span class="line">[07/28/2022-12:54:39] [E] Engine set up failed</span><br><span class="line">&amp;&amp;&amp;&amp; FAILED TensorRT.trtexec </span><br></pre></td></tr></table></figure>
+
+<p>这是因为目前TensorRt的BUG：<a target="_blank" rel="noopener" href="https://github.com/NVIDIA/TensorRT/issues/974#issuecomment-754323987">#974 (comment)</a>，不支持模型中的<code>resize_image</code>操作。不支持的还有NonZero （op is not supported in TRT yet。）</p>
+<p>刚才训练代码里使用的<code>keras.backend.resize_images</code><a target="_blank" rel="noopener" href="https://docs.w3cub.com/tensorflow~2.3/keras/backend/resize_images">这个方法</a>使用的是 the <code>nearest</code> model + <code>half_pixel</code> + <code>round_prefer_ceil</code>。</p>
+<blockquote>
+<p>一模一样的<a target="_blank" rel="noopener" href="https://github.com/NVIDIA/TensorRT/issues/1061">issue</a> 。</p>
+</blockquote>
+<p><strong>解决方案</strong>：Lambda式子改成<code>model.add(K.layers.Lambda(lambda x:tf.image.resize(x,[224,224])))</code>。</p>
+<p>OK，使用Keras的Sequential模型，“搭”自己的网络很快，保存也方便。</p>
+<h2 id="二、模型冻结"><a href="#二、模型冻结" class="headerlink" title="二、模型冻结"></a>二、模型冻结</h2><p>hdf5模型是可以再次被训练的动态图，现将其冻结转换成pb文件，用于前向计算。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"><span class="keyword">import</span> keras <span class="keyword">as</span> K</span><br><span class="line"><span class="keyword">from</span> tensorflow.python.framework.convert_to_constants <span class="keyword">import</span> convert_variables_to_constants_v2</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">convert_h5to_pb</span>():</span><br><span class="line">    model = tf.keras.models.load_model(<span class="string">&quot;E:/cifar10.h5&quot;</span>,<span class="built_in">compile</span>=<span class="literal">False</span>)</span><br><span class="line">    model.summary()</span><br><span class="line">    full_model = tf.function(<span class="keyword">lambda</span> Input: model(Input))</span><br><span class="line">    full_model = full_model.get_concrete_function(tf.TensorSpec(model.inputs[<span class="number">0</span>].shape, model.inputs[<span class="number">0</span>].dtype))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Get frozen ConcreteFunction</span></span><br><span class="line">    frozen_func = convert_variables_to_constants_v2(full_model)</span><br><span class="line">    frozen_func.graph.as_graph_def()</span><br><span class="line"></span><br><span class="line">    layers = [op.name <span class="keyword">for</span> op <span class="keyword">in</span> frozen_func.graph.get_operations()]</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;-&quot;</span> * <span class="number">50</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Frozen model layers: &quot;</span>)</span><br><span class="line">    <span class="keyword">for</span> layer <span class="keyword">in</span> layers:</span><br><span class="line">        <span class="built_in">print</span>(layer)</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;-&quot;</span> * <span class="number">50</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Frozen model inputs: &quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(frozen_func.inputs)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Frozen model outputs: &quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(frozen_func.outputs)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Save frozen graph from frozen ConcreteFunction to hard drive</span></span><br><span class="line">    tf.io.write_graph(graph_or_graph_def=frozen_func.graph,</span><br><span class="line">                      logdir=<span class="string">&quot;E:/&quot;</span>,</span><br><span class="line">                      name=<span class="string">&quot;cifar10.pb&quot;</span>,</span><br><span class="line">                      as_text=<span class="literal">False</span>)</span><br><span class="line">convert_h5to_pb()</span><br><span class="line"></span><br><span class="line"><span class="comment">#output</span></span><br><span class="line">--------------------------------------------------</span><br><span class="line">Frozen model inputs: </span><br><span class="line">[&lt;tf.Tensor <span class="string">&#x27;Input:0&#x27;</span> shape=(<span class="literal">None</span>, <span class="number">32</span>, <span class="number">32</span>, <span class="number">3</span>) dtype=float32&gt;]</span><br><span class="line">Frozen model outputs: </span><br><span class="line">[&lt;tf.Tensor <span class="string">&#x27;Identity:0&#x27;</span> shape=(<span class="literal">None</span>, <span class="number">10</span>) dtype=float32&gt;]</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、转onnx文件"><a href="#三、转onnx文件" class="headerlink" title="三、转onnx文件"></a>三、转onnx文件</h2><p>使用<code>tf2onnx.convert</code>命令将<code>.pb</code>文件转为<code>.onnx</code>文件：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -m tf2onnx.convert  --input E:/cifar10.pb --inputs Input:0 --outputs Identity:0 --output E:/cifar10.onnx --opset 11</span><br></pre></td></tr></table></figure>
+
+<p>–inputs ：模型输入层的名字            –outputs ：模型输出层的名字<br>输入输出层的名字在冻结代码里可以输出出来。</p>
+<p>生成的onnx文件可以在<a target="_blank" rel="noopener" href="https://netron.app/">Netron</a>网站进行可视化，查看网络结构。<br>此时onnx模型的输入向量维度可以通过netron看到是**<code>float32[unk__1220,224,224,3]</code>**,格式是TF的NHWC.</p>
+<h2 id="四、生成优化引擎文件"><a href="#四、生成优化引擎文件" class="headerlink" title="四、生成优化引擎文件"></a>四、生成优化引擎文件</h2><blockquote>
+<p>（<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_29007291/article/details/116135737">trtexec的用法</a>，<a target="_blank" rel="noopener" href="https://blog.csdn.net/HW140701/article/details/120360642">TensorRT - 自带工具trtexec的参数使用说明</a>，<a target="_blank" rel="noopener" href="https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#trtexec">官方介绍文档</a>，<a target="_blank" rel="noopener" href="https://blog.csdn.net/u011622208/article/details/120132973?spm=1001.2014.3001.5502">测试博客</a>）</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">trtexec --onnx=cifar10.onnx --saveEngine=cifar10.trt --workspace=4096 --minShapes=Input:0:1x32x32x3 --optShapes=Input:0:1x32x32x3 --maxShapes=Input:0:50x32x32x3 --fp16</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>onnx: 输入的onnx模型</li>
+<li>saveEngine：转换好后保存的tensorrt engine</li>
+<li>workspace：使用的gpu内存，有时候不够，需要手动增大点，单位是<strong>MB</strong></li>
+<li>minShapes：动态尺寸时的最小尺寸，格式为<strong>NCHW</strong>，需要给定输入node的名字，</li>
+<li>optShapes：推理测试的尺寸，trtexec会执行推理测试，该shape就是测试时的输入shape</li>
+<li>maxShapes：动态尺寸时的最大尺寸，这里只有batch是动态的，其他维度都是写死的</li>
+<li>fp16：float16推理</li>
+</ul>
+<h2 id="五、数据预处理"><a href="#五、数据预处理" class="headerlink" title="五、数据预处理"></a>五、数据预处理</h2><p>我们的最终目的是使用引擎对数据进行前向推理。到第四章结束，我们就拿到了最终的“模型”即序列化的引擎文件，下面是对数据的预处理，即加载数据。（我是直接使用了这位佬根据官方MNIST数据集处理代码改写的CIFAR10代码，<a target="_blank" rel="noopener" href="https://github.com/leimao/LibTorch-ResNet-CIFAR/blob/main/src/cifar10.cpp">github链接</a>）</p>
+<p>为了满足动态批量的数据输入，可以利用Libtorch的DataLoader类。自定义我们的DataLoader类，只需要重写<code>torch::data::dataset</code>的get和size方法。</p>
+<blockquote>
+<p>这篇文章完全可以让你自学废对自定义数据类型的加载：<a target="_blank" rel="noopener" href="https://krshrimali.github.io/posts/2019/07/custom-data-loading-using-pytorch-c-api/">Custom Data Loading using PyTorch C++ API</a></p>
+</blockquote>
+<p>假设现在已经写好了<code>CustomDataset</code>类，那么分批喂数据的代码大抵就可以是这样：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Make DataSet</span></span><br><span class="line"><span class="keyword">auto</span> test_dataset = <span class="built_in">CustomDataset</span>(dataset_path, <span class="string">&quot;.txt&quot;</span>, class2label)</span><br><span class="line">    .<span class="built_in">map</span>(torch::data::transforms::Stack&lt;&gt;());</span><br><span class="line"><span class="comment">//Build DataLoader</span></span><br><span class="line"><span class="keyword">auto</span> test_data_loader = torch::data::<span class="built_in">make_data_loader</span>(</span><br><span class="line">    std::<span class="built_in">move</span>(test_set_transformed), INFERENCE_BATCH);</span><br><span class="line"><span class="comment">//const size_t test_dataset_size = test_dataset.size().value();</span></span><br><span class="line"><span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; batch : *test_data_loader)&#123;</span><br><span class="line">    torch::Tensor inputs_tensor = batch.data;</span><br><span class="line">    torch::Tensor labels_tensor = batch.target;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="六、加载引擎文件"><a href="#六、加载引擎文件" class="headerlink" title="六、加载引擎文件"></a>六、加载引擎文件</h2><p>流程：</p>
+<ol>
+<li>读取<code>.trt</code>文件到变量.</li>
+<li>通过<code>nvinfer1::createInferRuntime</code>创建<em>runtime</em>对象.</li>
+<li>调用<em>runtime</em>的<code>deserializeCudaEngine</code>方法反序列化<code>.trt</code>文件得到<em>engine</em>对象.</li>
+<li><code>IExecutionContext* context = engine-&gt;createExecutionContext();</code>得到执行上下文对象<em>context</em>.</li>
+</ol>
+<p>模型的推理就通过<em>context</em>的<code>enqueueV2</code>方法实现。可以把前三步集合到一个方法中，名叫<strong>readTRTfile</strong>，方法返回一个<code>engine</code>对象。</p>
+<p>之所以不直接取到context后返回context，因为我们需要调用engine的方法查看<a target="_blank" rel="noopener" href="https://blog.csdn.net/XCCCCZ/article/details/123009816">模型的输入输出维度</a>。</p>
+<p>【要点】前文我们生成的模型(得到的pb亦或是pt文件）都是动态批量，得到动态输入的onnx，转为trt时指定了之后推理输入的shape范围，<strong>注意</strong>只是范围，得到的trt经过deserialize得到engine，在<strong>调用engine时需要指定维度</strong>。如果没有指定或者维度不对则报错：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[E] [TRT] Parameter check failed at: engine.cpp::nvinfer1::rt::ShapeMachineContext::resolveSlots::1318, condition: allInputDimensionsSpecified(routine)</span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/XCCCCZ/article/details/123009816">解决办法：</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//查看engine的输入输出维度</span></span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; engine-&gt;<span class="built_in">getNbBindings</span>(); i++)&#123;</span><br><span class="line">    nvinfer1::Dims dims = engine-&gt;<span class="built_in">getBindingDimensions</span>(i);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;index %d, dims: (&quot;</span>,i);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> d = <span class="number">0</span>; d &lt; dims.nbDims; d++)&#123;</span><br><span class="line">        <span class="keyword">if</span> (d &lt; dims.nbDims - <span class="number">1</span>)	<span class="built_in">printf</span>(<span class="string">&quot;%d,&quot;</span>, dims.d[d]);</span><br><span class="line">        <span class="keyword">else</span>	<span class="built_in">printf</span>(<span class="string">&quot;%d&quot;</span>, dims.d[d]);</span><br><span class="line">    &#125;	<span class="built_in">printf</span>(<span class="string">&quot;)\n&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以DenseNet121的trt文件为例，以上程序输出</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">index 0, dims: (-1,224,224,3)</span><br><span class="line">index 1, dims: (-1,100)</span><br></pre></td></tr></table></figure>
+
+<p>所以我们得把输入的动态维度写死，在python里，在调用engine推理前做这样的设置即可:<code>context.set_binding_shape(0, (BATCH, 3, INPUT_H, INPUT_W))</code>，C++代码里应该调用IExecutionContext类型的实例的setBindingDimensions(int bindingIndex, Dims dimensions)方法。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//确定动态维度</span></span><br><span class="line">nvinfer1::Dims dims4;</span><br><span class="line">dims4.d[<span class="number">0</span>] = <span class="number">1</span>;    <span class="comment">// replace dynamic batch size with 1</span></span><br><span class="line">dims4.d[<span class="number">1</span>] = <span class="number">224</span>;</span><br><span class="line">dims4.d[<span class="number">2</span>] = <span class="number">224</span>;</span><br><span class="line">dims4.d[<span class="number">3</span>] = <span class="number">3</span>;</span><br><span class="line">dims4.nbDims = <span class="number">4</span>;</span><br><span class="line">context-&gt;<span class="built_in">setBindingDimensions</span>(<span class="number">0</span>, dims4);</span><br></pre></td></tr></table></figure>
+
+<p>然后再执行推理就可以了。</p>
+<p>总体思路是：拿到一个对维度未知的模型engine文件后，首先读入文件内容并做deserialize获得engine。<br>然后调用getBindingDimensions()查看engine的输入输出维度(如果知道维度就不用)。<br>在调用context-&gt;executeV2()做推理前把维度值为-1的动态维度值替换成具体的维度并调用context-&gt;setBindingDimensions()设置具体维度，然后在数据填入input buffer准备好后调用context-&gt;executeV2()做推理即可:</p>
+<p>为什么是V2，V1V2有什么区别：</p>
+<blockquote>
+<p>execute/enqueue are for <strong>implicit</strong> batch networks, and executeV2/enqueue<strong>V2 are for explicit</strong> batch networks. The V2 versions don’t take a batch_size argument since it’s taken from the explicit batch dimension of the network / or from the optimization profile if used.</p>
+<p>In TensorRT 7, the ONNX parser <strong>requires</strong> that you <strong>create an explicit batch network</strong>, so you’ll have to use V2 methods.</p>
+</blockquote>
+<hr>
+<p>到这里，我们通过<strong>readTRTfile</strong>函数得到了engine对象，通过engine得到了context对象，然后确定了context输入的动态维度。</p>
+<h2 id="七、执行推理"><a href="#七、执行推理" class="headerlink" title="七、执行推理"></a>七、执行推理</h2><p>写一个<em>doinference</em>的方法，传入输入和输出数据数组。前文写的DataLoader每批得到的数据都是<code>torch::tensor</code>向量，</p>
+<ol>
+<li><code>cudaMalloc</code>开辟GPU内存。</li>
+<li><code>cudaMemcpyAsync</code>将批数据传给GPU。</li>
+<li>调用<code>context.enqueueV2</code>执行推理。</li>
+<li><code>cudaMemcpyAsync</code>将批数据传回CPU。</li>
+</ol>
+<p>大致分为这四步。</p>
+<p>程序运行结果：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">(TrtInfer::testAllSample) test_dataset_size0</span><br><span class="line">loading filename from:E:/cifar10fix.trt</span><br><span class="line">length:47512416</span><br><span class="line">load engine done</span><br><span class="line">deserializing</span><br><span class="line">[08/25/2022-20:37:10] [W] [TRT] Using an engine plan file across different models of devices is not recommended and is likely to affect performance or even cause errors.</span><br><span class="line">[08/25/2022-20:37:11] [W] [TRT] TensorRT was linked against cuDNN 8.1.0 but loaded cuDNN 8.0.5</span><br><span class="line">[08/25/2022-20:37:11] [W] [TRT] TensorRT was linked against cuBLAS/cuBLAS LT 11.3.0 but loaded cuBLAS/cuBLAS LT 11.2.1</span><br><span class="line">deserialize done</span><br><span class="line">The engine in TensorRT.cpp is not nullptr</span><br><span class="line">tensorRT engine created successfully.</span><br><span class="line">[08/25/2022-20:37:12] [W] [TRT] TensorRT was linked against cuDNN 8.1.0 but loaded cuDNN 8.0.5</span><br><span class="line">[08/25/2022-20:37:12] [W] [TRT] TensorRT was linked against cuBLAS/cuBLAS LT 11.3.0 but loaded cuBLAS/cuBLAS LT 11.2.1</span><br><span class="line">index 4, dims: (-1,32,32,3)</span><br><span class="line">index 2, dims: (-1,10)</span><br><span class="line">num_running_corrects_NUMS=====2132</span><br><span class="line">num_running_NUMS=====10000</span><br><span class="line"> Eval Loss: 2.23657 Eval Acc: 0.2132</span><br><span class="line">test_dataset_size:()</span><br><span class="line">HAPYY ENDING!!!~~~~~ヾ(≧▽≦*)oヾ(≧▽≦*)oヾ(≧▽≦*)o</span><br></pre></td></tr></table></figure>
+
+
+
+<p>代码之后贴出来…笔记推了好久好久，之后继续更</p>
+<h2 id="可能遇到的错误："><a href="#可能遇到的错误：" class="headerlink" title="可能遇到的错误："></a>可能遇到的错误：</h2><h3 id="onnx转trt"><a href="#onnx转trt" class="headerlink" title="onnx转trt"></a>onnx转trt</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[W] Dynamic dimensions required for input: input_1:0, but no shapes were provided. Automatically overriding shape to: 1x224x224x3</span><br><span class="line"><span class="meta">#</span><span class="language-bash">这是因为Shapes参数处，输入节点的名字有错误，应该是input_1:0而不是input_1。直接和netron上显示的结点name保持一致即可</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[E] [TRT] input_1:0: for dimension number 1 in profile 0 does not match network definition (got min=3, opt=3, max=3), expected min=opt=max=224).</span><br><span class="line"><span class="meta">#</span><span class="language-bash">Shapes参数1x3x224x224改成1x224x224x3即可</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ERROR: builtin_op_importers.cpp:2593 In function importResize:</span><br><span class="line">[8] Assertion failed: (mode != &quot;nearest&quot; || nearest_mode == &quot;floor&quot;) &amp;&amp; &quot;This version of TensorRT only supports floor nearest_mode!&quot;</span><br><span class="line">[07/28/2022-12:54:39] [E] Failed to parse onnx file</span><br><span class="line"><span class="meta">#</span><span class="language-bash">模型中resize(nearest-ceil model)算子不支持</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[E] [TRT] C:\source\rtSafe\cuda\cudaConvolutionRunner.cpp (483) - Cudnn Error in nvinfer1::rt::cuda::CudnnConvolutionRunner::executeConv: 2 (CUDNN_STATUS_ALLOC_FAILED)</span><br><span class="line"><span class="meta">#</span><span class="language-bash">--workspace参数设置的太大了  调小一点</span></span><br></pre></td></tr></table></figure>
+
+<p>【Could not load library cudnn_cnn_infer64_8.dll. Error code 1455.Please make sure cudnn_cnn_infer64_8.dll is in your library path! 】<br>or 【<strong>context null</strong>】<br>原因：内存不足，重启VS或者电脑就OK。（或者参考<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/66355477/could-not-load-library-cudnn-ops-infer64-8-dll-error-code-126-please-make-sure">此问答</a>）</p>
+<h2 id="安装chocolatey。"><a href="#安装chocolatey。" class="headerlink" title="安装chocolatey。"></a>安装chocolatey。</h2><p><code>Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString(&#39;https://chocolatey.org/install.ps1&#39;))</code></p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/108833705">https://zhuanlan.zhihu.com/p/108833705</a></p>
+<p><a target="_blank" rel="noopener" href="https://techwizard.cloud/2019/04/13/powershell-tip-exception-calling-downloadstring-with-1-arguments/#:~:text=throwing%20below%20error%3A-,Exception%20calling%20%E2%80%9CDownloadString%E2%80%9D%20with%20%E2%80%9C1%E2%80%9D%20argument">https://techwizard.cloud/2019/04/13/powershell-tip-exception-calling-downloadstring-with-1-arguments/#:~:text=throwing%20below%20error%3A-,Exception%20calling%20%E2%80%9CDownloadString%E2%80%9D%20with%20%E2%80%9C1%E2%80%9D%20argument</a>(s,script%20will%20resolve%20this%20issue.</p>
+</blockquote>
+<p>添加seuic源：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$  choco <span class="built_in">source</span> add -n=seuic -s<span class="string">&quot;http://choco.seuic.info/nuget/&quot;</span> </span><br><span class="line">$  choco <span class="built_in">source</span> remove -n=chocolatey</span><br><span class="line">$  choco <span class="built_in">source</span> add -n=chocolatey -s<span class="string">&quot;https://chocolatey.org/api/v2/&quot;</span>  --priority=3</span><br></pre></td></tr></table></figure>
+
+<p>然后<code>choco install fcgiwrap</code>，提示下载失败，源没有这个包。。。。焯</p>
+<h1 id="iPadGoodNotes-GoogleDrive-WindowsNotion"><a href="#iPadGoodNotes-GoogleDrive-WindowsNotion" class="headerlink" title="iPadGoodNotes+GoogleDrive+WindowsNotion"></a>iPadGoodNotes+GoogleDrive+WindowsNotion</h1><p>需求：在iPad上学习、批注文献，电脑端使用Notion对文献集中管理。文献要实时同步，电脑端要能看到最新的批注情况。</p>
+<p>探索了一段时间，尝试过Foxit、Notability、GoodNotes、PDFViewer、iCloud甚至百度云，但综合价格、批注习惯和生态等因素，用GoodNotes+GoogleDrive对文献进行同步是相对最适合我的（0$哈哈哈）。</p>
+<h2 id="文献同步"><a href="#文献同步" class="headerlink" title="文献同步"></a>文献同步</h2><p><strong>GoodNotes开启GoogleDrive备份。</strong>Notes中所有内容会被同结构地备份到GoogleDrive下自动生成的GoodNotes文件夹中，至此实现了文件的云端备份。<br>顺其自然的，在电脑端直接浏览GoogleDrive里的文献就是最新批注的。<br>使用网页版GoogleDrive体验不如桌面版的，缓冲时间很不友好，有时网络问题甚至可能打不开了，因此：</p>
+<p><strong>下载GoogleDrive Desktop，并将同步模式设置为镜像模式。</strong>此时你就可以指定一个目录镜像地存放Drive中所有文件。<br>之所以不使用Stream这种节省空间的模式是因为他会把文件挂到<code>xx/My Drive/</code>下，路径中有个带空格的My Drive！路径带空格根本忍不了，甚至如果你没有把系统改成英文的（如果你是家庭版Windows还不能改成英文系统！），安装下来的GoogleDrive只会是中文版的，他会把文件挂到<code>xx/我的云盘/</code>下，路径带中文！关键这个路径名不能被更改。</p>
+<img src="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101125610629.png" style="zoom:50%;" />
+
+<p>我选择自定义的文件路径为：<code>E:/Google/Drive/</code>，那我GoodNotes里的论文就在本地的<code>E:/Google/Drive/GoodNotes/</code>文件夹下同步存在着。GoodNotes修改论文后自动同步到Drive里，电脑的Drive自动同步后，点击<code>E:/Google/Drive/GoodNotes/xxx.pdf</code>看到的就是最新的批注论文。</p>
+<p>但是在电脑端对GoodNotes文件夹下的pdf修改后，GoodNotes是看不到修改的，并且GoodNotes对其修改后会覆盖掉。这个问题我这个方案是无解的，没办法，这受限于GoodNotes操作的文件本质是<em>GoodNotes File</em>而非PDF，鱼和熊掌不可兼得。</p>
+<p><img src="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101132249422.png"></p>
+<h2 id="文献管理"><a href="#文献管理" class="headerlink" title="文献管理"></a>文献管理</h2><p>使用Notion管理文献，需要在使用Notion时跳转到最新的批注文献（本地），比如上文中的<code>E:/Google/Drive/GoodNotes/xxx.pdf</code>，但是非会员限制单个文件&lt;5MB，会员好贵的！！！而且就真的是上传上去了，不能同步更新了。所以通过在Notion中嵌入本地文件链接，直接通过链接打开文件。使用Ngnix。</p>
+<h3 id="下载并配置Nginx"><a href="#下载并配置Nginx" class="headerlink" title="下载并配置Nginx"></a>下载并配置Nginx</h3><p><a target="_blank" rel="noopener" href="https://nginx.org/en/download.html">下载地址</a>，我选择的是Stable的<a target="_blank" rel="noopener" href="https://nginx.org/download/nginx-1.22.1.zip">nginx/Windows-1.22.1</a>。下载并解压。</p>
+<p>双击执行文件夹中nginx.exe，浏览器中输入并转到localhost，正常会显示Nginx的欢迎界面。  </p>
+<p>下面配置安装目录下的<code>conf/nginx.conf</code>，主要是配置location。打开后在原server的location字段下添加新的location字段：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">location</span> <span class="string">/goodnotes/</span> &#123;</span><br><span class="line">	<span class="string">alias</span>   <span class="string">E:/Google/Drive/GoodNotes/;</span>			<span class="comment"># 这里最后一个/要加上不然404</span></span><br><span class="line">	<span class="string">autoindex</span> <span class="string">on;</span>							  <span class="comment"># 开启自动适配全资源</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><em>这里alias和root是有区别的，我用了alias，root与alias主要区别在于nginx如何解释location后面的uri，这使两者分别以不同的方式将请求映射到服务器文件上。参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/qingshan-tang/p/12763522.html">nginx配置静态资源访问</a></em></p>
+<p>然后终端中输入<code>nginx -s stop</code>停止服务后<code>start nginx</code>开启服务。</p>
+<blockquote>
+<p>按说<code>nginx -s reload</code>就可以起到更新conf文件后重新加载nginx服务的作用，但是我这边实践证明reload多少有问题，conf没有得到更新还是老内容，所以还是先stop再start了。参考了<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_40908748/article/details/110140072">解决nginx退出后却依然能访问页面的问题</a></p>
+<p><code>tasklist /fi &quot;IMAGENAME eq nginx.exe&quot;</code> 查看所有运行了的Nginx进程<br><code>taskkill /f /pid 16708</code>杀死PID16708的进程</p>
+</blockquote>
+<p>此时浏览器中输入<code>localhost/goodnotes/Interpretable/xxx.pdf</code>就可以打开本机的<code>E:/Google/Drive/GoodNotes/Interpretable/xxx.pdf</code>了。</p>
+<p>设置开机自启动nginx服务：右键nginx.exe生成快捷方式，将快捷方式剪切到系统的启动文件夹下。(Win+R输入<strong>shell:startup</strong>跳转过去)</p>
+<img src="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/image-20230101145258586.png" style="zoom:50%;" />
+
+<img src="https://raw.githubusercontent.com/Wyatthy/wyatthy.github.io/main/PicGoimages/demo.gif" alt="demo" style="zoom: 33%;" />
+
+<p>至此，只实现了对pdf类型的跳转打开，期间尝试了Nginx - Shell Script CGI，但是没成功，网上大部分都是Linux或者苹果的博客。后续我会再试的。</p>
+<blockquote>
+<p>参考文章：</p>
+<p><a target="_blank" rel="noopener" href="https://four2.site/articles/id19422.html">在 Notion 中插入本地文件和目录链接</a><br><a target="_blank" rel="noopener" href="https://me.jinchuang.org/archives/114.html">Nginx支持web界面执行bash|python等系统命令和脚本</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/qingshan-tang/p/12763522.html">nginx配置静态资源访问</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%A1%B9%E7%9B%AE/" rel="tag"><i class="fa fa-tag"></i> 项目</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/02/09/%E7%BE%8E%E5%89%A7%E5%8F%B0%E8%AF%8D/" rel="prev" title="美剧台词">
+      <i class="fa fa-chevron-left"></i> 美剧台词
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/01/01/%E6%96%87%E7%8C%AE%E5%90%8C%E6%AD%A5/" rel="next" title="GoodNotes+Google Drive+Notion文献跨平台同步管理方案">
+      GoodNotes+Google Drive+Notion文献跨平台同步管理方案 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9B%B6-%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE"><span class="nav-number">1.</span> <span class="nav-text">零. 环境配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%8F%8A%E4%BF%9D%E5%AD%98"><span class="nav-number">2.</span> <span class="nav-text">一、模型训练及保存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%A8%A1%E5%9E%8B%E5%86%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">二、模型冻结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E8%BD%AConnx%E6%96%87%E4%BB%B6"><span class="nav-number">4.</span> <span class="nav-text">三、转onnx文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E7%94%9F%E6%88%90%E4%BC%98%E5%8C%96%E5%BC%95%E6%93%8E%E6%96%87%E4%BB%B6"><span class="nav-number">5.</span> <span class="nav-text">四、生成优化引擎文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E6%95%B0%E6%8D%AE%E9%A2%84%E5%A4%84%E7%90%86"><span class="nav-number">6.</span> <span class="nav-text">五、数据预处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%8A%A0%E8%BD%BD%E5%BC%95%E6%93%8E%E6%96%87%E4%BB%B6"><span class="nav-number">7.</span> <span class="nav-text">六、加载引擎文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E6%89%A7%E8%A1%8C%E6%8E%A8%E7%90%86"><span class="nav-number">8.</span> <span class="nav-text">七、执行推理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%AF%E8%83%BD%E9%81%87%E5%88%B0%E7%9A%84%E9%94%99%E8%AF%AF%EF%BC%9A"><span class="nav-number">9.</span> <span class="nav-text">可能遇到的错误：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#onnx%E8%BD%ACtrt"><span class="nav-number">9.1.</span> <span class="nav-text">onnx转trt</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85chocolatey%E3%80%82"><span class="nav-number">10.</span> <span class="nav-text">安装chocolatey。</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#iPadGoodNotes-GoogleDrive-WindowsNotion"><span class="nav-number"></span> <span class="nav-text">iPadGoodNotes+GoogleDrive+WindowsNotion</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E7%8C%AE%E5%90%8C%E6%AD%A5"><span class="nav-number">1.</span> <span class="nav-text">文献同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E7%8C%AE%E7%AE%A1%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">文献管理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E5%B9%B6%E9%85%8D%E7%BD%AENginx"><span class="nav-number">2.1.</span> <span class="nav-text">下载并配置Nginx</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="wyatt"
+      src="/uploads/avatar.jpg">
+  <p class="site-author-name" itemprop="name">wyatt</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">wyatt</span>
+</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+  <script>
+    (function(){
+      var canonicalURL, curProtocol;
+      //Get the <link> tag
+      var x=document.getElementsByTagName("link");
+		//Find the last canonical URL
+		if(x.length > 0){
+			for (i=0;i<x.length;i++){
+				if(x[i].rel.toLowerCase() == 'canonical' && x[i].href){
+					canonicalURL=x[i].href;
+				}
+			}
+		}
+    //Get protocol
+	    if (!canonicalURL){
+	    	curProtocol = window.location.protocol.split(':')[0];
+	    }
+	    else{
+	    	curProtocol = canonicalURL.split(':')[0];
+	    }
+      //Get current URL if the canonical URL does not exist
+	    if (!canonicalURL) canonicalURL = window.location.href;
+	    //Assign script content. Replace current URL with the canonical URL
+      !function(){var e=/([http|https]:\/\/[a-zA-Z0-9\_\.]+\.baidu\.com)/gi,r=canonicalURL,t=document.referrer;if(!e.test(r)){var n=(String(curProtocol).toLowerCase() === 'https')?"https://sp0.baidu.com/9_Q4simg2RQJ8t7jm9iCKT-xh_/s.gif":"//api.share.baidu.com/s.gif";t?(n+="?r="+encodeURIComponent(document.referrer),r&&(n+="&l="+r)):r&&(n+="?l="+r);var i=new Image;i.src=n}}(window);})();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
